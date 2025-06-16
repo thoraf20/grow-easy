@@ -12,6 +12,7 @@ import notFoundHandler from './middleware/not-found';
 import requestId from './middleware/request-id';
 import responseTime from './middleware/response-time';
 import logger from './lib/logger';
+import { connectDB, disconnectDB } from './config/db';
 
 export default class App {
 	public express: Application;
@@ -45,8 +46,7 @@ export default class App {
 	private async initializeServices(): Promise<void> {
 		try {
 			// Add your service initializations here
-			// Example:
-			// await database.connect();
+			await connectDB();
 			// await cache.connect();
 			// await messageQueue.connect();
 
@@ -172,8 +172,7 @@ export default class App {
 			}
 
 			// Add cleanup for other services
-			// Example:
-			// await database.disconnect();
+			await disconnectDB();
 			// await cache.disconnect();
 			// await messageQueue.disconnect();
 

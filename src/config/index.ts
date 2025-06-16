@@ -5,9 +5,18 @@ dotenv.config();
 export const config = {
 	port: Number(process.env.PORT) || 8080,
 	env: process.env.NODE_ENV || 'development',
-	dbUrl: process.env.DB_URL || 'mongodb://localhost:27017/myapp',
 	jwtSecret: process.env.JWT_SECRET,
+	mongodb: {
+		uri: process.env.DB_URI || 'mongodb://localhost:27017/ge',
+		options: {
+			autoIndex: true,
+			maxPoolSize: 10,
+			serverSelectionTimeoutMS: 5000,
+			socketTimeoutMS: 45000,
+			family: 4, // Use IPv4
+		},
+	},
 	cors: {
 		allowedOrigins: process.env.CORS_ALLOWED_ORIGINS?.split(',') || [],
-	}
+	},
 };
