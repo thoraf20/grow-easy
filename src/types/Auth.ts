@@ -12,6 +12,7 @@ export interface IRegisterRequest extends ILoginRequest {
 
 export interface IAuthResponse {
 	token: string;
+	refreshToken: string;
 	user: {
 		id: string;
 		email: string;

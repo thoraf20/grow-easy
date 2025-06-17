@@ -16,6 +16,7 @@ import AuthValidation from '../shared/validators/auth.validator'
 import { AuthService } from '../services/auth';
 import User from '../models/user';
 import bcrypt from 'bcrypt';
+import { config } from '../config';
 
 
 export default class AuthController extends BaseController {
@@ -28,6 +29,12 @@ export default class AuthController extends BaseController {
 				method: 'post',
 				handler: this.register.bind(this),
 				middlewares: [validate(AuthValidation.register)],
+			},
+			{
+				path: '/verify-email',
+				method: 'post',
+				handler: this.verifyEmail.bind(this),
+				middlewares: [validate(AuthValidation.verifyEmail)],
 			},
 			{
 				path: '/login',
@@ -82,29 +89,32 @@ export default class AuthController extends BaseController {
 				businessName,
 			});
 
+      res.cookie('refreshToken', response.refreshToken, { httpOnly: true, secure: config.env === 'production'})
 			super.send(res, response, StatusCodes.CREATED);
 		} catch (error) {
 			next(error);
 		}
 	}
 
-	public async login(
-		req: Request,
-		res: Response,
-		next: NextFunction,
-	) {
+	public async verifyEmail(req: Request, res: Response, next: NextFunction) {
+	 try {
+		const { email, code } = req.body
+		const response = await AuthService.verifyEmail(email, code)
+
+		super.send(res, response, StatusCodes.OK);
+	 } catch (error) {
+		next(error)
+	 }
+	}
+
+	public async login(req: Request, res: Response, next: NextFunction) {
 		try {
 			const { email, password }: ILoginRequest = req.body;
-
-      const dbUser = await User.findOne({ email })
-
-      if(!dbUser) {
-        throw new ApiError('Invalid credentials', StatusCodes.BAD_REQUEST);
-      }
 
       const response = await AuthService.login({ email, password })
 
 			res.locals.data = response;
+      res.cookie('refreshToken', response.refreshToken, { httpOnly: true, secure: config.env === 'production'})
 			super.send(res, response, StatusCodes.OK);
 		} catch (error) {
 			next(error);
@@ -117,7 +127,7 @@ export default class AuthController extends BaseController {
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			// Add your logout logic here
+      res.clearCookie('refreshToken')
 			super.send(
 				res,
 				{ message: 'Logged out successfully' },

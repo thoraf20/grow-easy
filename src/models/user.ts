@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
 		phone: { type: String, required: true, unique: true, sparse: true },
 		password: { type: String, required: true },
 		businessName: { type: String, required: true },
+		isEmailVerified: { type: Boolean, default: false},
 		isActive: { type: Boolean, default: true },
 		lastLogin: { type: Date },
 		createdAt: { type: Date, default: Date.now },

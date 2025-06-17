@@ -14,6 +14,11 @@ class AuthValidation extends BaseValidation {
 		businessName: this.required('Business name'),
 	});
 
+	public verifyEmail = Joi.object({
+		email: this.email().required(),
+		code: Joi.string().length(4).required(),
+	});
+
 	public resetPassword = Joi.object({
 		email: this.email(),
 	});
