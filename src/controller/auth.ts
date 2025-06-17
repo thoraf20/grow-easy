@@ -10,6 +10,13 @@ import {
 	IResetPasswordRequest,
 	IChangePasswordRequest,
 } from '../types/Auth';
+import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
+import AuthValidation from '../shared/validators/auth.validator'
+import { AuthService } from '../services/auth';
+import User from '../models/user';
+import bcrypt from 'bcrypt';
+
 
 export default class AuthController extends BaseController {
 	public basePath = 'auth';
@@ -17,73 +24,35 @@ export default class AuthController extends BaseController {
 	public routes(): RouteDefinition[] {
 		return [
 			{
-				path: '/login',
-				method: 'post',
-				handler: this.login.bind(this),
-			},
-			{
 				path: '/register',
 				method: 'post',
 				handler: this.register.bind(this),
+				middlewares: [validate(AuthValidation.register)],
+			},
+			{
+				path: '/login',
+				method: 'post',
+				handler: this.login.bind(this),
+				middlewares: [validate(AuthValidation.login)],
 			},
 			{
 				path: '/logout',
 				method: 'post',
 				handler: this.logout.bind(this),
-				middlewares: [this.authMiddleware],
+				middlewares: [authMiddleware, validate(AuthValidation.login)],
 			},
-			{
-				path: '/reset-password',
-				method: 'post',
-				handler: this.resetPassword.bind(this),
-			},
-			{
-				path: '/change-password',
-				method: 'put',
-				handler: this.changePassword.bind(this),
-				middlewares: [this.authMiddleware],
-			},
+			// {
+			// 	path: '/reset-password',
+			// 	method: 'post',
+			// 	handler: this.resetPassword.bind(this),
+			// },
+			// {
+			// 	path: '/change-password',
+			// 	method: 'put',
+			// 	handler: this.changePassword.bind(this),
+			// 	middlewares: [this.authMiddleware],
+			// },
 		];
-	}
-
-	private authMiddleware(
-		req: Request,
-		res: Response,
-		next: NextFunction,
-	): void {
-		const authHeader = req.headers.authorization;
-		if (!authHeader) {
-			next(new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED));
-			return;
-		}
-		// Add your JWT verification logic here
-		next();
-	}
-
-	public async login(
-		req: Request,
-		res: Response,
-		next: NextFunction,
-	): Promise<void> {
-		try {
-			const { email, password }: ILoginRequest = req.body;
-
-			// Add your login logic here
-			// Example response:
-			const response: IAuthResponse = {
-				token: 'sample-jwt-token',
-				user: {
-					id: '1',
-					name: 'John Doe',
-					email: email,
-				},
-			};
-
-			res.locals.data = response;
-			super.send(res, response, StatusCodes.OK);
-		} catch (error) {
-			next(error);
-		}
 	}
 
 	public async register(
@@ -92,21 +61,51 @@ export default class AuthController extends BaseController {
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			const { email, password, name }: IRegisterRequest = req.body;
+			const { email, phone, password, businessName }: IRegisterRequest = req.body;
 
-			// Add your registration logic here
-			// Example response:
-			const response: IAuthResponse = {
-				token: 'sample-jwt-token',
-				user: {
-					id: '1',
-					name: name,
-					email: email,
-				},
-			};
+      const existingUser = await User.findOne({ email });
+                
+      if (existingUser) {
+        throw new ApiError(
+          'Email already registered',
+          StatusCodes.CONFLICT,
+        )
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+			const response = await AuthService.registerUser({
+				email,
+				phone,
+				password: hashedPassword,
+				businessName,
+			});
+
+			super.send(res, response, StatusCodes.CREATED);
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	public async login(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	) {
+		try {
+			const { email, password }: ILoginRequest = req.body;
+
+      const dbUser = await User.findOne({ email })
+
+      if(!dbUser) {
+        throw new ApiError('Invalid credentials', StatusCodes.BAD_REQUEST);
+      }
+
+      const response = await AuthService.login({ email, password })
 
 			res.locals.data = response;
-			super.send(res, response, StatusCodes.CREATED);
+			super.send(res, response, StatusCodes.OK);
 		} catch (error) {
 			next(error);
 		}
@@ -129,42 +128,42 @@ export default class AuthController extends BaseController {
 		}
 	}
 
-	public async resetPassword(
-		req: Request,
-		res: Response,
-		next: NextFunction,
-	): Promise<void> {
-		try {
-			const { email }: IResetPasswordRequest = req.body;
+	// public async resetPassword(
+	// 	req: Request,
+	// 	res: Response,
+	// 	next: NextFunction,
+	// ): Promise<void> {
+	// 	try {
+	// 		const { email }: IResetPasswordRequest = req.body;
 
-			// Add your password reset logic here
-			super.send(
-				res,
-				{ message: 'Password reset email sent' },
-				StatusCodes.OK,
-			);
-		} catch (error) {
-			next(error);
-		}
-	}
+	// 		// Add your password reset logic here
+	// 		super.send(
+	// 			res,
+	// 			{ message: 'Password reset email sent' },
+	// 			StatusCodes.OK,
+	// 		);
+	// 	} catch (error) {
+	// 		next(error);
+	// 	}
+	// }
 
-	public async changePassword(
-		req: Request,
-		res: Response,
-		next: NextFunction,
-	): Promise<void> {
-		try {
-			const { oldPassword, newPassword }: IChangePasswordRequest =
-				req.body;
+	// public async changePassword(
+	// 	req: Request,
+	// 	res: Response,
+	// 	next: NextFunction,
+	// ): Promise<void> {
+	// 	try {
+	// 		const { oldPassword, newPassword }: IChangePasswordRequest =
+	// 			req.body;
 
-			// Add your password change logic here
-			super.send(
-				res,
-				{ message: 'Password changed successfully' },
-				StatusCodes.OK,
-			);
-		} catch (error) {
-			next(error);
-		}
-	}
+	// 		// Add your password change logic here
+	// 		super.send(
+	// 			res,
+	// 			{ message: 'Password changed successfully' },
+	// 			StatusCodes.OK,
+	// 		);
+	// 	} catch (error) {
+	// 		next(error);
+	// 	}
+	// }
 }

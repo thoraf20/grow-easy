@@ -21,6 +21,7 @@ class ApiError extends Error implements IError {
 		this.message = msg;
 		this.status = statusCode;
 		this.name = name;
+		Error.captureStackTrace(this, this.constructor);
 	}
 }
 

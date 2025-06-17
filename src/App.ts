@@ -7,7 +7,7 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import registerRoutes from './routes';
-import errorHandler from './middleware/error-handler';
+import { errorHandler } from './middleware/error-handler';
 import notFoundHandler from './middleware/not-found';
 import requestId from './middleware/request-id';
 import responseTime from './middleware/response-time';
@@ -62,6 +62,14 @@ export default class App {
 	}
 
 	private configureMiddleware(): void {
+		this.express.set('trust proxy', [
+			'loopback', // localhost
+			'linklocal',
+			'uniquelocal',
+			// Add your proxy IPs here, for example:
+			// '192.168.1.0/24'
+		]);
+
 		// Request tracking
 		this.express.use(requestId());
 		this.express.use(responseTime());
@@ -73,16 +81,7 @@ export default class App {
 				crossOriginEmbedderPolicy: config.env === 'production',
 			}),
 		);
-
-		// Rate limiting
-		this.express.use(
-			rateLimit({
-				windowMs: 15 * 60 * 1000, // 15 minutes
-				max: 100, // limit each IP to 100 requests per windowMs
-				message:
-					'Too many requests from this IP, please try again later',
-			}),
-		);
+		
 
 		// CORS
 		this.express.use(
@@ -139,23 +138,37 @@ export default class App {
 	}
 
 	private configureRoutes(): void {
-		// Health check endpoint
-		this.express.get('/health', (req, res) => {
-			res.status(200).json({
-				status: 'OK',
-				timestamp: new Date().toISOString(),
-			});
+	
+		this.express.get('/health', (_req, res) => {
+			if (!res.headersSent) {
+				res.status(200).json({
+					status: 'healthy',
+					timestamp: new Date().toISOString(),
+				});
+			}
 		});
 
-		// API routes
+		this.express.use(
+			rateLimit({
+				windowMs: 15 * 60 * 1000, // 15 minutes
+				max: 100, // limit each IP to 100 requests per windowMs
+				message: 'Too many requests from this IP, please try again later',
+				standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+				legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+				// Use a custom handler to get the real IP
+				keyGenerator: (req) => {
+					return req.ip; // This will now use the properly trusted IP
+				},
+			}),
+		);
+
 		this.express.use('/api', registerRoutes());
 	}
 
 	private configureErrorHandling(): void {
-		// 404 handler
 		this.express.use(notFoundHandler);
 
-		// Global error handler
+		// Global  handler
 		this.express.use(errorHandler);
 	}
 

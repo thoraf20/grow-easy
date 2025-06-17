@@ -7,10 +7,12 @@ export default abstract class BaseController {
 	abstract routes(): RouteDefinition[];
 
 	protected send<T>(res: Response, data: T, statusCode = 200): void {
-		res.status(statusCode).json({
-			success: true,
-			data,
-		});
+		if (!res.headersSent) {
+			res.status(statusCode).json({
+				success: true,
+				data,
+			});
+		}
 	}
 
 	protected handleError(

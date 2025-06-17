@@ -4,15 +4,18 @@ export interface ILoginRequest {
 }
 
 export interface IRegisterRequest extends ILoginRequest {
-	name: string;
+	email: string;
+	password: string;
+	phone: string;
+	businessName: string;
 }
 
 export interface IAuthResponse {
 	token: string;
 	user: {
 		id: string;
-		name: string;
 		email: string;
+		businessName: string
 	};
 }
 

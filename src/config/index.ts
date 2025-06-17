@@ -6,6 +6,7 @@ export const config = {
 	port: Number(process.env.PORT) || 8080,
 	env: process.env.NODE_ENV || 'development',
 	jwtSecret: process.env.JWT_SECRET,
+	jwtExpiration: process.env.JWT_EXPIRATION || '1h',
 	mongodb: {
 		uri: process.env.DB_URI || 'mongodb://localhost:27017/ge',
 		options: {

@@ -1,6 +1,8 @@
+import jwt from 'jsonwebtoken';
+import { config } from '../config';
 import { encrypt } from '../lib/crypto';
 
-function getEncryptedText<T>(input: T): T | string {
+export function getEncryptedText<T>(input: T): T | string {
 	const APPLY_ENCRYPTION = process.env.APPLY_ENCRYPTION === 'true';
 	const { SECRET_KEY } = process.env;
 
@@ -14,7 +16,36 @@ function getEncryptedText<T>(input: T): T | string {
 
 	return input;
 }
-// need to remove once we have added more functions here
-export default getEncryptedText;
 
-export { getEncryptedText };
+export const generateAccessToken = (userId: string): string => {
+	const { jwtSecret } = config;
+
+	if (!jwtSecret) {
+		throw new Error('JWT secret is not defined');
+	}
+	return jwt.sign({ id: userId }, jwtSecret, { expiresIn: '1h' });
+}
+
+export const generateRefreshToken = (userId: string): string => {
+	const { jwtSecret } = config;
+
+	if (!jwtSecret) {
+		throw new Error('JWT secret is not defined');
+	}
+	return jwt.sign({ id: userId }, jwtSecret, { expiresIn: '7d' });
+}
+
+export const verifyToken = (token: string): Promise<any> => {
+	const { jwtSecret } = config;
+	if (!jwtSecret) {
+		throw new Error('JWT secret is not defined');
+	}
+	return new Promise((resolve, reject) => {
+		jwt.verify(token, jwtSecret, (err, decoded) => {
+			if (err) {
+				return reject(err);
+			}
+			resolve(decoded);
+		});
+	});
+}
