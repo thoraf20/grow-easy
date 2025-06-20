@@ -6,9 +6,9 @@ import ApiError from '../abstractions/ApiError';
 import {
 	ILoginRequest,
 	IRegisterRequest,
-	IAuthResponse,
-	IResetPasswordRequest,
-	IChangePasswordRequest,
+	// IAuthResponse,
+	// IResetPasswordRequest,
+	// IChangePasswordRequest,
 } from '../types/Auth';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -66,7 +66,7 @@ export default class AuthController extends BaseController {
 		req: Request,
 		res: Response,
 		next: NextFunction,
-	): Promise<void> {
+	) {
 		try {
 			const { email, phone, password, businessName }: IRegisterRequest = req.body;
 
@@ -90,7 +90,9 @@ export default class AuthController extends BaseController {
 			});
 
       res.cookie('refreshToken', response.refreshToken, { httpOnly: true, secure: config.env === 'production'})
-			super.send(res, response, StatusCodes.CREATED);
+
+			return res.status(StatusCodes.CREATED).json({ msg: "User registered successfully, use 1234 to verify email", data: response });
+			// super.send(res, response, StatusCodes.CREATED);
 		} catch (error) {
 			next(error);
 		}

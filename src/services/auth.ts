@@ -17,8 +17,8 @@ export const AuthService = {
 			businessName: userData.businessName,
 		});
 
-		const token = generateAccessToken(user.id);
-		const refreshToken = generateAccessToken(user.id);
+		const token = generateAccessToken(user.id, userData.email);
+		const refreshToken = generateAccessToken(user.id, userData.email);
 
 		return {
 			token,
@@ -48,8 +48,8 @@ export const AuthService = {
 		lastLogin: new Date(),
 	});
 
-    const token = generateAccessToken(userExist.id);
-    const refreshToken = generateRefreshToken(userExist.id)
+    const token = generateAccessToken(userExist.id, userData.email);
+    const refreshToken = generateRefreshToken(userExist.id, userData.email);
     return {
       token,
       refreshToken,
@@ -69,7 +69,9 @@ export const AuthService = {
 		}
 
 		if (code === "1234") {
-			await User.findOneAndUpdate(userExist.id, { isEmailVerified: true })
+			userExist.isEmailVerified = true;
+			userExist.isActive = true;
+			await userExist.save();
 			return {
 				msg: "Email verification successful"
 			}

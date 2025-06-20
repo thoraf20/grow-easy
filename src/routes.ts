@@ -2,6 +2,7 @@ import { Router } from 'express';
 import logger from './lib/logger';
 import { RouteDefinition } from './types/RouteDefinition';
 import AuthController from './controller/auth';
+import StoreFrontController from './controller/storefront';
 
 function registerControllerRoutes(routes: RouteDefinition[]): Router {
 	const controllerRouter = Router();
@@ -26,7 +27,7 @@ export default function registerRoutes(): Router {
 		// Define controllers
 		const controllers = [
 			new AuthController(),
-			// Add other controllers here
+			new StoreFrontController(),
 		];
 
 		// Register routes for each controller

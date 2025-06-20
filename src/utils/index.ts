@@ -17,23 +17,23 @@ export function getEncryptedText<T>(input: T): T | string {
 	return input;
 }
 
-export const generateAccessToken = (userId: string): string => {
+export const generateAccessToken = (userId: string, email: string): string => {
 	const { jwtSecret } = config;
 
 	if (!jwtSecret) {
 		throw new Error('JWT secret is not defined');
 	}
-	return jwt.sign({ id: userId }, jwtSecret, { expiresIn: '1h' });
+	return jwt.sign({ id: userId, email }, jwtSecret, { expiresIn: '1h' });
 }
 
-export const generateRefreshToken = (userId: string): string => {
+export const generateRefreshToken = (userId: string, email: string): string => {
 	const { jwtSecret } = config;
 
 	if (!jwtSecret) {
 		throw new Error('JWT secret is not defined');
 	}
-	return jwt.sign({ id: userId }, jwtSecret, { expiresIn: '7d' });
-}
+	return jwt.sign({ id: userId , email}, jwtSecret, { expiresIn: '7d' });
+};
 
 export const verifyToken = (token: string): Promise<any> => {
 	const { jwtSecret } = config;
@@ -48,4 +48,8 @@ export const verifyToken = (token: string): Promise<any> => {
 			resolve(decoded);
 		});
 	});
+}
+
+export const slugify = (text: string): string => {
+	return text.split(' ').join('-').toLowerCase();
 }

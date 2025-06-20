@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
 		password: { type: String, required: true },
 		businessName: { type: String, required: true },
 		isEmailVerified: { type: Boolean, default: false},
-		isActive: { type: Boolean, default: true },
+		isActive: { type: Boolean, default: false },
 		lastLogin: { type: Date },
 		createdAt: { type: Date, default: Date.now },
 	},
